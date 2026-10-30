@@ -104,20 +104,42 @@ class Judge:
 
 
 # -----------------------------------------------------------------------------
-# Strategic mutation allocation (Algorithm 2)
+# Mutation allocation
 # -----------------------------------------------------------------------------
-def allocate_mutations(pool: list[Candidate], n_mutations: int, eps: float = 1e-6) -> list[int]:
-    mu = np.array([c.mean for c in pool])
-    sigma = np.maximum([c.std for c in pool], 1e-12)
-    b = int(np.argmax(mu))
-    others = np.array([i for i in range(len(pool)) if i != b], dtype=int)
+ALLOCATIONS = ("ocba", "even", "proportional")
 
-    w = np.zeros(len(pool))
-    w[others] = (sigma[others] / np.maximum(mu[b] - mu[others], eps)) ** 2
-    w[b] = sigma[b] * np.sqrt(np.sum(w[others] ** 2 / sigma[others] ** 2)) if len(others) else 1.0
+
+def allocate_mutations(
+    pool: list[Candidate], n_mutations: int, strategy: str = "ocba", eps: float = 1e-6
+) -> list[int]:
+    """Distribute N mutations across the pool.
+
+    ocba:         strategic mutation allocation (Algorithm 2)
+    even:         the same number of mutations for every candidate
+    proportional: proportional to each candidate's mean score
+    """
+    mu = np.array([c.mean for c in pool])
+    if strategy == "ocba":
+        w = _ocba_weights(mu, np.maximum([c.std for c in pool], 1e-12), eps)
+    elif strategy == "even":
+        w = np.ones(len(pool))
+    elif strategy == "proportional":
+        w = mu - mu.min()  # scores are negative, so shift them to be non-negative
+    else:
+        raise ValueError(f"unknown allocation strategy: {strategy}")
     if w.sum() <= 0:
         w = np.ones(len(pool))
     return _round_to_total(n_mutations * w / w.sum(), n_mutations)
+
+
+def _ocba_weights(mu: np.ndarray, sigma: np.ndarray, eps: float) -> np.ndarray:
+    """w_i = (sigma_i / max(mu_b - mu_i, eps))^2 for i != b, w_b = sigma_b * sqrt(sum_i w_i^2 / sigma_i^2)."""
+    b = int(np.argmax(mu))
+    others = np.array([i for i in range(len(mu)) if i != b], dtype=int)
+    w = np.zeros(len(mu))
+    w[others] = (sigma[others] / np.maximum(mu[b] - mu[others], eps)) ** 2
+    w[b] = sigma[b] * np.sqrt(np.sum(w[others] ** 2 / sigma[others] ** 2)) if len(others) else 1.0
+    return w
 
 
 def _round_to_total(x: np.ndarray, total: int) -> list[int]:
@@ -139,6 +161,7 @@ def rule_evolve(
     n_mutations: int = 20,
     iterations: int = 10,
     batch_size: int = 10,
+    allocation: str = "ocba",
     eps: float = 1e-6,
     seed: int = 42,
     output_dir: Path | None = None,
@@ -162,13 +185,13 @@ def rule_evolve(
     _save(pool, output_dir, 0)
 
     for t in range(1, iterations + 1):
-        allocation = allocate_mutations(pool, n_mutations, eps)
-        print(f"Iteration {t}/{iterations}: mutation allocation {allocation}")
+        n_per_parent = allocate_mutations(pool, n_mutations, allocation, eps)
+        print(f"Iteration {t}/{iterations}: mutation allocation {n_per_parent}")
 
         # Each new candidate inherits the score set of its parent.
         children = [
             Candidate(rule, list(parent.scores))
-            for parent, n in zip(pool, allocation)
+            for parent, n in zip(pool, n_per_parent)
             for _ in range(n)
             if (rule := mutator(parent.rule))
         ]
@@ -206,6 +229,7 @@ def main() -> None:
     p.add_argument("--mutations", "-N", type=int, default=20)
     p.add_argument("--pool-size", "-m", type=int, default=5)
     p.add_argument("--batch-size", "-B", type=int, default=10)
+    p.add_argument("--allocation", choices=ALLOCATIONS, default="ocba", help="Mutation-allocation strategy.")
     p.add_argument("--lam", type=float, default=3000.0, help="Weight of the correctness penalty (lambda).")
     p.add_argument("--eps", type=float, default=1e-6)
     p.add_argument("--train-size", type=int, default=1000, help="Tasks [0, train-size) of BigCodeBench are used.")
@@ -225,6 +249,7 @@ def main() -> None:
         n_mutations=args.mutations,
         iterations=args.iterations,
         batch_size=args.batch_size,
+        allocation=args.allocation,
         eps=args.eps,
         seed=args.seed,
         output_dir=args.output_dir,

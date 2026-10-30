@@ -57,8 +57,26 @@ python rule_evolve.py --initial-rule path/to/AGENTS.md --agent openhands --model
 | `-N`, `--mutations` | `20` | Mutations per iteration |
 | `-m`, `--pool-size` | `5` | Rule pool size |
 | `-B`, `--batch-size` | `10` | Coding tasks per evaluation |
+| `--allocation` | `ocba` | Mutation allocation: `ocba` (ours), or the `even` / `proportional` baselines |
 | `--lam` | `3000` | Weight λ of the correctness penalty |
 | `--eps` | `1e-6` | Minimum gap ε in the mutation allocation |
 | `--train-size` | `1000` | BigCodeBench tasks `[0, train-size)` used for evolution |
 
 The pool from each iteration is written to `runs/iter_XX/`, and the best rules to `runs/best_rule.md`.
+
+The baseline allocation strategies use the same pipeline. `even` gives every candidate `N / m` mutations, and `proportional` allocates mutations in proportion to each candidate's mean score:
+
+```bash
+python rule_evolve.py --initial-rule path/to/AGENTS.md --allocation even
+```
+
+## Citation
+
+```bibtex
+@inproceedings{jiang2026ruleevolve,
+  title     = {Self-Evolving Coding Rules for AI Coding Agents},
+  author    = {Jiang, Zhengyuan and Wang, Reachal and Hu, Yuepeng and Wang, Yupu and Jia, Yuqi and Gong, Neil Zhenqiang},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2026}
+}
+```
