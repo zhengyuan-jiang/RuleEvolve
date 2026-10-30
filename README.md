@@ -73,10 +73,10 @@ python rule_evolve.py --initial-rule path/to/AGENTS.md --allocation even
 ## Citation
 
 ```bibtex
-@inproceedings{jiang2026ruleevolve,
-  title     = {Self-Evolving Coding Rules for AI Coding Agents},
-  author    = {Jiang, Zhengyuan and Wang, Reachal and Hu, Yuepeng and Wang, Yupu and Jia, Yuqi and Gong, Neil Zhenqiang},
-  booktitle = {Advances in Neural Information Processing Systems},
-  year      = {2026}
+@article{jiang2026self,
+  title={Self-Evolving Coding Rules for AI Coding Agents},
+  author={Jiang, Zhengyuan and Wang, Reachal and Hu, Yuepeng and Wang, Yupu and Jia, Yuqi and Gong, Neil Zhenqiang},
+  journal={arXiv preprint arXiv:2610.00650},
+  year={2026}
 }
 ```
