@@ -76,7 +76,7 @@ python rule_evolve.py --initial-rule path/to/AGENTS.md --allocation even
 @inproceedings{jiang2026ruleevolve,
   title     = {Self-Evolving Coding Rules for AI Coding Agents},
   author    = {Jiang, Zhengyuan and Wang, Reachal and Hu, Yuepeng and Wang, Yupu and Jia, Yuqi and Gong, Neil Zhenqiang},
-  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  booktitle = {Advances in Neural Information Processing Systems},
   year      = {2026}
 }
 ```
