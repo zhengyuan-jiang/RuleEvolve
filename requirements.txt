@@ -1,0 +1,5 @@
+numpy
+openai>=2.0
+datasets
+openhands-sdk==1.19.1
+openhands-tools==1.19.1
