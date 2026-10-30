@@ -9,6 +9,10 @@ import os
 import tempfile
 from pathlib import Path
 
+# Keep OpenHands quiet during long searches; set these variables yourself to override.
+os.environ.setdefault("LOG_LEVEL", "WARNING")
+os.environ.setdefault("OPENHANDS_SUPPRESS_BANNER", "1")
+
 SAVE_PROMPT = "\nPlease finish this task and save the code to a file named 'task.py'."
 NO_RULE_SYSTEM_PROMPT = "You are a Python expert. Complete the task."
 
@@ -29,9 +33,11 @@ class OpenHandsAgent:
         from openhands.tools.task_tracker import TaskTrackerTool
         from openhands.tools.terminal import TerminalTool
 
-        with tempfile.TemporaryDirectory() as workspace:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp, "workspace")
+            workspace.mkdir()
             if rule:
-                Path(workspace, "AGENTS.md").write_text(rule, encoding="utf-8")
+                (workspace / "AGENTS.md").write_text(rule, encoding="utf-8")
             agent = Agent(
                 llm=LLM(model=self.model, base_url=self.base_url, api_key=self.api_key),
                 tools=[
@@ -39,15 +45,20 @@ class OpenHandsAgent:
                     Tool(name=FileEditorTool.name),
                     Tool(name=TaskTrackerTool.name),
                 ],
-                agent_context=AgentContext(skills=load_project_skills(workspace)),
+                agent_context=AgentContext(skills=load_project_skills(str(workspace))),
             )
-            conversation = Conversation(agent=agent, workspace=workspace, visualizer=None)
+            conversation = Conversation(
+                agent=agent,
+                workspace=str(workspace),
+                persistence_dir=str(Path(tmp, "state")),
+                visualizer=None,
+            )
             try:
                 conversation.send_message(prompt + SAVE_PROMPT)
                 conversation.run()
             finally:
                 conversation.close()
-            task_file = Path(workspace, "task.py")
+            task_file = workspace / "task.py"
             return task_file.read_text(encoding="utf-8") if task_file.exists() else ""
 
 

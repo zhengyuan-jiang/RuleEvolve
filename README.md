@@ -2,6 +2,8 @@
 
 The official repository for the NeurIPS 2026 paper "Self-Evolving Coding Rules for AI Coding Agents".
 
+[[Paper]](https://arxiv.org/abs/2610.00650)
+
 RuleEvolve evolves the coding rules (e.g. `AGENTS.md`) of an AI coding agent automatically. It maintains a pool of `m` candidate rules and improves them iteratively:
 
 1. **Mutation allocation.** `N` mutations are distributed across the pool with an OCBA-based strategy. Candidates with a higher score variance, or with a mean score close to the current best, receive more mutations.
@@ -70,6 +72,20 @@ The baseline allocation strategies use the same pipeline. `even` gives every can
 python rule_evolve.py --initial-rule path/to/AGENTS.md --allocation even
 ```
 
+### Local backbone models
+
+The coding agent can use a self-hosted model, for example Qwen3-Coder served by [Ollama](https://ollama.com). The mutator still uses the OpenAI API. The two agent backends expect different model names and base URLs:
+
+```bash
+# OpenHands
+python rule_evolve.py --initial-rule path/to/AGENTS.md --agent openhands \
+    --model ollama/qwen3-coder:30b --agent-base-url http://localhost:11434
+
+# OpenAI SDK
+python rule_evolve.py --initial-rule path/to/AGENTS.md --agent openai \
+    --model qwen3-coder:30b --agent-base-url http://localhost:11434/v1
+```
+
 ## Citation
 
 ```bibtex
@@ -80,3 +96,7 @@ python rule_evolve.py --initial-rule path/to/AGENTS.md --allocation even
   year={2026}
 }
 ```
+
+## License
+
+This project is released under the [MIT License](LICENSE).
